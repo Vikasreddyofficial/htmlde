@@ -1,0 +1,573 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Flight Ops — Runway Wind Components</title>
+  <style>
+    :root{
+      /* Adjust these to match your internal brand guidelines */
+      --bg0:#f6f8fc;
+      --bg1:#ffffff;
+      --ink:#0f172a;
+      --muted:#475569;
+      --border:#e2e8f0;
+
+      --primary:#0b4ea2;       /* airline-style blue */
+      --primary-2:#0ea5e9;     /* accent */
+      --good:#16a34a;
+      --danger:#b00020;
+
+      --best-bg:#ecfeff;
+      --best-border:#a5f3fc;
+
+      --shadow: 0 10px 30px rgba(2,6,23,.08);
+      --radius: 14px;
+      --radius-sm: 10px;
+    }
+
+    *{ box-sizing: border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 300px at 10% 0%, rgba(14,165,233,.14), transparent 55%),
+        radial-gradient(900px 300px at 90% 0%, rgba(11,78,162,.12), transparent 55%),
+        linear-gradient(180deg, var(--bg0), #ffffff 42%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+
+    .shell{ max-width: 1100px; margin: 22px auto 56px; padding: 0 18px; }
+
+    .topbar{
+      display:flex; align-items:center; justify-content:flex-start; gap:16px;
+      padding: 14px 16px;
+      border: 1px solid rgba(226,232,240,.9);
+      background: rgba(255,255,255,.75);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .logo{
+      height: 50px;
+      width: auto;
+      flex-shrink: 0;
+    }
+    .brand{
+      display:flex; flex-direction:column; gap:2px;
+      line-height:1.1;
+      flex-grow: 0;
+    }
+    .brand h1{
+      font-size: 18px; margin:0;
+      letter-spacing: .2px;
+    }
+    .brand .sub{
+      font-size: 12.5px; color: var(--muted);
+    }
+    .badge{
+      font-size: 12px;
+      color: #0b4ea2;
+      border: 1px solid rgba(11,78,162,.25);
+      background: rgba(11,78,162,.06);
+      padding: 6px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .grid{
+      margin-top: 16px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .card{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.9);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .row{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 820px){ .row{ grid-template-columns: 1fr; } }
+
+    label{ display:block; margin: 10px 0 6px; font-weight: 650; font-size: 13px; color: #0b1220; }
+    .hint{ color: var(--muted); font-size: 12.5px; margin-top: 6px; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    input[type="text"], input[type="number"]{
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+    }
+    input[type="text"]:focus, input[type="number"]:focus{
+      border-color: rgba(14,165,233,.65);
+      box-shadow: 0 0 0 4px rgba(14,165,233,.16);
+    }
+    input:disabled{
+      background: #f8fafc;
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    /* File input: keep native but make it look cleaner */
+    input[type="file"]{
+      width:100%;
+      padding: 10px;
+      border: 1px dashed rgba(148,163,184,.9);
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,.8);
+    }
+    input[type="file"]::file-selector-button{
+      border: 1px solid rgba(11,78,162,.25);
+      background: rgba(11,78,162,.08);
+      color: var(--primary);
+      padding: 8px 10px;
+      border-radius: 10px;
+      margin-right: 10px;
+      cursor: pointer;
+      font-weight: 650;
+    }
+    input[type="file"]::file-selector-button:hover{
+      background: rgba(11,78,162,.12);
+    }
+
+    .status{
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .ok{ color: var(--good); font-weight: 650; }
+    .error{ color: var(--danger); font-weight: 650; }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,.35);
+      background: rgba(248,250,252,.9);
+      font-size: 12.5px;
+      color: #0b1220;
+      white-space: nowrap;
+    }
+    .pill.primary{
+      border-color: rgba(14,165,233,.35);
+      background: rgba(14,165,233,.10);
+      color: #075985;
+      font-weight: 650;
+    }
+    .pill.best{
+      border-color: rgba(34,211,238,.55);
+      background: rgba(34,211,238,.12);
+      color: #0e7490;
+      font-weight: 750;
+    }
+
+    .table-wrap{
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #fff;
+    }
+
+    table{ width:100%; border-collapse: separate; border-spacing: 0; }
+    th, td{
+      padding: 10px 10px;
+      border-bottom: 1px solid #eef2f7;
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
+    th{
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: linear-gradient(180deg, #ffffff, #f8fafc);
+      color: #0b1220;
+      font-weight: 750;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    tbody tr:nth-child(even){ background: #fbfdff; }
+
+    tbody tr.best{
+      background: var(--best-bg) !important;
+      outline: 2px solid rgba(165,243,252,.35);
+      outline-offset: -2px;
+    }
+
+    .summary-row{
+      display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+      margin-top: 10px;
+    }
+    .divider{
+      height:1px; background: rgba(226,232,240,.9);
+      margin: 10px 0 6px;
+    }
+
+    .btn-group{
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .btn{
+      padding: 12px 24px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-weight: 650;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all .15s ease;
+      flex: 1;
+    }
+    .btn:disabled{
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-primary{
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .btn-primary:hover:not(:disabled){
+      background: #094080;
+      border-color: #094080;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(11,78,162,.25);
+    }
+    .btn-secondary{
+      background: white;
+      color: var(--ink);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover:not(:disabled){
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <img src="https://www.logoshape.com/wp-content/uploads/2024/11/indigo-vector-logo_logoshape.png" 
+           alt="IndiGo Logo" 
+           class="logo">
+      <div class="brand">
+        <h1>Flight Operations — Runway Wind Calculator</h1>
+        <div class="sub">Upload runway data, enter wind, get best runway(s) by headwind</div>
+      </div>
+      
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <label for="csvFile">Upload CSV</label>
+        <input id="csvFile" type="file" accept=".csv,text/csv" />
+
+
+        <div class="row">
+          <div>
+            <label for="icao">ICAO code</label>
+            <input id="icao" type="text" placeholder="e.g., 00AN" disabled />
+          </div>
+          <div></div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="windDir">Wind direction (° magnetic, FROM)</label>
+            <input id="windDir" type="number" min="0" max="360" step="1" placeholder="e.g., 270" disabled />
+            <div class="hint">Δ = windDir − runwayBearing; head=cos(Δ)×spd, cross=sin(Δ)×spd</div>
+          </div>
+          <div>
+            <label for="windSpd">Wind speed (knots)</label>
+            <input id="windSpd" type="number" min="0" step="0.000000001" placeholder="e.g., 12" disabled />
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button id="computeBtn" class="btn btn-primary" disabled>Compute</button>
+          <button id="resetBtn" class="btn btn-secondary" disabled>Reset</button>
+        </div>
+
+        <div id="status" class="status"></div>
+      </div>
+
+      <div id="output" class="card" hidden></div>
+    </div>
+  </div>
+
+  <script>
+    // Code Generated by Sidekick is for learning and experimentation purposes only.
+    const fileEl = document.getElementById("csvFile");
+    const icaoEl = document.getElementById("icao");
+    const windDirEl = document.getElementById("windDir");
+    const windSpdEl = document.getElementById("windSpd");
+    const computeBtn = document.getElementById("computeBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const statusEl = document.getElementById("status");
+    const outputEl = document.getElementById("output");
+
+    let rows = []; // { icao, runway_id, magnetic_bearing }
+
+    const normHeader = (h) => String(h ?? "")
+      .toLowerCase()
+      .trim()
+      .replace(/[\s_]+/g, "");
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function detectDelimiter(headerLine) {
+      const tabCount = (headerLine.match(/\t/g) || []).length;
+      const commaCount = (headerLine.match(/,/g) || []).length;
+      return tabCount > commaCount ? "\t" : ",";
+    }
+
+    function parseDelimited(text) {
+      const lines = text
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .split("\n")
+        .filter(l => l.trim().length);
+
+      if (lines.length < 2) return [];
+
+      const delim = detectDelimiter(lines[0]);
+
+      const parseLine = (line) => {
+        const out = [];
+        let cur = "";
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (delim === "," && ch === '"') {
+            if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+            else { inQuotes = !inQuotes; }
+          } else if (ch === delim && !inQuotes) {
+            out.push(cur); cur = "";
+          } else {
+            cur += ch;
+          }
+        }
+        out.push(cur);
+        return out.map(v => v.trim());
+      };
+
+      const headerRaw = parseLine(lines[0]);
+      const header = headerRaw.map(normHeader);
+
+      const idxIcao = header.indexOf("icao");
+      const idxRunway = header.indexOf("runwayid");
+      const idxBearing = header.indexOf("magneticbearing");
+
+      if (idxIcao < 0 || idxRunway < 0 || idxBearing < 0) {
+        throw new Error("Missing headers. Need: icao, runway id, magnetic bearing.");
+      }
+
+      const data = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseLine(lines[i]);
+
+        const icao = String(cols[idxIcao] ?? "").toUpperCase().trim();
+        const runway_id = String(cols[idxRunway] ?? "").trim();
+        const bearingRaw = String(cols[idxBearing] ?? "").trim();
+
+        if (!icao || !runway_id || !bearingRaw) continue;
+
+        const magnetic_bearing = Number(bearingRaw);
+        if (!Number.isFinite(magnetic_bearing)) continue;
+
+        data.push({ icao, runway_id, magnetic_bearing });
+      }
+      return data;
+    }
+
+    function normDeg0to360(d) {
+      let x = Number(d);
+      if (!Number.isFinite(x)) return null;
+      x = x % 360;
+      if (x < 0) x += 360;
+      if (x === 360) x = 0;
+      return x;
+    }
+
+    function normalizeDeltaDeg(delta) {
+      let d = Number(delta);
+      if (!Number.isFinite(d)) return null;
+      d = ((d + 180) % 360) - 180;
+      return d;
+    }
+
+    function degToRad(deg) { return deg * Math.PI / 180; }
+
+    // Your formulas:
+    // Head wind = cos(windDir - runwayBearing) * windSpeed
+    // Cross wind = sin(windDir - runwayBearing) * windSpeed
+    function computeComponents(windDirDeg, runwayBearingDeg, windSpeedKt) {
+      const deltaDeg = normalizeDeltaDeg(windDirDeg - runwayBearingDeg);
+      const rad = degToRad(deltaDeg);
+      const headWind = Math.cos(rad) * windSpeedKt;
+      const crossWind = Math.sin(rad) * windSpeedKt;
+      return { headWind, crossWind, deltaDeg };
+    }
+
+    function fmtSignedFixed(x, decimals = 9) {
+      const s = Number(x).toFixed(decimals);
+      return (x > 0 ? "+" : "") + s;
+    }
+
+    function crossSideFromSign(crossWind) {
+      if (Math.abs(crossWind) < 1e-12) return "—";
+      return crossWind > 0 ? "from right" : "from left";
+    }
+
+    function setInputsEnabled(enabled) {
+      icaoEl.disabled = !enabled;
+      windDirEl.disabled = !enabled;
+      windSpdEl.disabled = !enabled;
+      computeBtn.disabled = !enabled;
+      resetBtn.disabled = !enabled;
+    }
+
+    function renderResults() {
+      const icao = icaoEl.value.toUpperCase().trim();
+      if (!icao) { outputEl.hidden = true; return; }
+
+      const matches = rows.filter(r => r.icao === icao);
+      outputEl.hidden = false;
+
+      if (matches.length === 0) {
+        outputEl.innerHTML = `<div class="error">No rows found for ICAO: <b>${escapeHtml(icao)}</b></div>`;
+        return;
+      }
+
+      const windDir = normDeg0to360(windDirEl.value);
+      const windSpd = Number(windSpdEl.value);
+      const haveWind = (windDir !== null) && Number.isFinite(windSpd);
+
+      if (!haveWind) {
+        outputEl.innerHTML = `
+          <div class="hint">Enter wind direction and speed to compute headwind/crosswind.</div>
+          <div class="divider"></div>
+          <div class="hint">Found <b>${matches.length}</b> runway record(s) for <b>${escapeHtml(icao)}</b>.</div>
+        `;
+        return;
+      }
+
+      const computed = matches.map(r => {
+        const bearing = normDeg0to360(r.magnetic_bearing);
+        if (bearing === null) return null;
+        const { headWind, crossWind, deltaDeg } = computeComponents(windDir, bearing, windSpd);
+        return { ...r, bearing, headWind, crossWind, deltaDeg };
+      }).filter(Boolean);
+
+      const maxHead = Math.max(...computed.map(x => x.headWind));
+      const EPS = 1e-12;
+      const best = computed.filter(x => Math.abs(x.headWind - maxHead) <= EPS);
+
+      const bestList = best
+        .map(x => `${escapeHtml(x.runway_id)} (${x.bearing.toFixed(0)}°)`)
+        .join(", ");
+
+      const windSummary = `
+        <div class="summary-row">
+          <span class="pill primary"><b>Wind</b>&nbsp;${windDir.toFixed(0)}° @ ${windSpd.toFixed(9)} kt (FROM)</span>
+          <span class="pill best"><b>Suitable runway(s)</b>&nbsp;${bestList}</span>
+          <span class="pill"><span class="muted">Max headwind</span>&nbsp;<span class="mono">${fmtSignedFixed(maxHead, 9)}</span>&nbsp;kt</span>
+        </div>
+      `;
+
+      const tableRows = computed.map(x => {
+        const headLabel = x.headWind >= 0 ? "head" : "tail";
+        const crossAbs = Math.abs(x.crossWind);
+        const isBest = best.some(b => b.runway_id === x.runway_id && Math.abs(b.headWind - x.headWind) <= EPS);
+
+        return `
+          <tr class="${isBest ? "best" : ""}">
+            <td><b>${escapeHtml(x.runway_id)}</b>${isBest ? ` <span class="pill best">best</span>` : ""}</td>
+            <td>${escapeHtml(x.bearing.toFixed(0))}°</td>
+            <td><span class="mono">${fmtSignedFixed(x.headWind, 9)}</span> kt</td>
+            <td>${headLabel}</td>
+            <td><span class="mono">${crossAbs.toFixed(9)}</span> kt</td>
+            <td>${crossSideFromSign(x.crossWind)} <span class="muted">(Δ=${x.deltaDeg.toFixed(0)}°)</span></td>
+          </tr>
+        `;
+      }).join("");
+
+      outputEl.innerHTML = `
+        ${windSummary}
+        <div class="divider"></div>
+        <div class="hint">Runway list for <b>${escapeHtml(icao)}</b> (${matches.length} record(s))</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Runway ID</th>
+                <th>Runway magnetic bearing</th>
+                <th>Headwind (signed)</th>
+                <th>Head/Tail</th>
+                <th>Crosswind (magnitude)</th>
+                <th>Crosswind side</th>
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    fileEl.addEventListener("change", async () => {
+      const file = fileEl.files?.[0];
+      rows = [];
+      outputEl.hidden = true;
+      statusEl.textContent = "";
+      icaoEl.value = "";
+      windDirEl.value = "";
+      windSpdEl.value = "";
+      setInputsEnabled(false);
+
+      if (!file) return;
+
+      try {
+        statusEl.textContent = "Reading file...";
+        const text = await file.text();
+        rows = parseDelimited(text);
+        statusEl.innerHTML = `<span class="ok">Loaded ${rows.length} rows</span> <span class="muted">from</span> <span class="mono">${escapeHtml(file.name)}</span>`;
+        setInputsEnabled(true);
+        icaoEl.focus();
+      } catch (e) {
+        statusEl.innerHTML = `<span class="error">${escapeHtml(e.message)}</span>`;
+      }
+    });
+
+    computeBtn.addEventListener("click", () => {
+      renderResults();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      icaoEl.value = "";
+      windDirEl.value = "";
+      windSpdEl.value = "";
+      outputEl.hidden = true;
+    });
+  </script>
+</body>
+</html>
